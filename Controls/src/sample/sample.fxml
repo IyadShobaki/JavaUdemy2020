@@ -29,19 +29,19 @@
     <Button GridPane.rowIndex="0" GridPane.columnIndex="0" text="Click me">
         <graphic>
             <ImageView>
-                <Image url="@/icons/puffinBird.gif"/>
+                <Image url="puffinBird.gif"/>
             </ImageView>
         </graphic>
     </Button>
     <Label GridPane.rowIndex="0" GridPane.columnIndex="1" text="This is a label This is a label This is a label"
-            textFill="blue" WrapText="true">
+            textFill="blue" wrapText="true">
         <font>
             <Font name="Arial italic" size="12"/>
         </font>
 
         <graphic>
             <ImageView>
-                <Image url="@/icons/puffinBird.gif"/>
+                <Image url="puffinBird.gif"/>
             </ImageView>
         </graphic>
     </Label>
