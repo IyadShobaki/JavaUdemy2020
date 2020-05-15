@@ -61,11 +61,13 @@ class Student{
     public synchronized void startStudy(){
         //study
         System.out.println("Student is studying");
-        tutor.getProgressReport();
+
     }
-    public synchronized void handInAssignment(){
+    public void handInAssignment(){
 
         System.out.println("Student handed in assignment");
+        tutor.getProgressReport();
+
 
     }
 }
