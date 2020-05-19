@@ -1,4 +1,4 @@
-package model;
+package com.shobaki.model;
 
 public class Album {
     private int id;

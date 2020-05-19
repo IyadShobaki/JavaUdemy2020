@@ -1,15 +1,16 @@
 package com.shobaki;
 
-import model.Artist;
-import model.DataSource;
-import model.SongArtist;
+import com.shobaki.model.Artist;
+import com.shobaki.model.DataSource;
+import com.shobaki.model.SongArtist;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Scanner;
 
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
 
         DataSource dataSource = new DataSource();
         if(!dataSource.open()){
@@ -54,22 +55,26 @@ public class Main {
 
         dataSource.createViewSongArtists();
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter a song title: ");
-        //Go Your Own Way" or 1=1 or "  SQL injection attack
-        //SELECT name, name, track FROM artist_list WHERE title = "Go Your Own Way" or 1=1 or ""
-        //We should use the prepared statements class to prevent this attack
-        String title = scanner.nextLine();
-        songArtists = dataSource.querySongInfoView(title);
-        if(songArtists.isEmpty()){  //using isEmpty is much better way for checking
-            System.out.println("Couldn't find the artist for the song");
-            return;
-        }
-        for(SongArtist artist : songArtists){
-            System.out.println("FROM VIEW - Artist name = " + artist.getArtistName() +
-                    " Album name = " + artist.getAlbumName() +
-                    " Track number = " + artist.getTrack());
-        }
+//        Scanner scanner = new Scanner(System.in);
+//        System.out.println("Enter a song title: ");
+//        //Go Your Own Way" or 1=1 or "  SQL injection attack
+//        //SELECT name, name, track FROM artist_list WHERE title = "Go Your Own Way" or 1=1 or ""
+//        //We should use the prepared statements class to prevent this attack
+//        String title = scanner.nextLine();
+//        songArtists = dataSource.querySongInfoView(title);
+//        if(songArtists.isEmpty()){  //using isEmpty is much better way for checking
+//            System.out.println("Couldn't find the artist for the song");
+//            return;
+//        }
+//        for(SongArtist artist : songArtists){
+//            System.out.println("FROM VIEW - Artist name = " + artist.getArtistName() +
+//                    " Album name = " + artist.getAlbumName() +
+//                    " Track number = " + artist.getTrack());
+//        }
+
+//        dataSource.insertSong("Touch of Grey", "Grateful Dead", "In The Dark", 1);
+        //dataSource.insertSong("Bird Dog", "Everly Brothers", "All-Time Greatest Hits",7);
+        dataSource.insertSong("Tabeeb Garah", "Goerge Wassof", "Tabeeb Garah", 1);
 
         dataSource.close();
     }
