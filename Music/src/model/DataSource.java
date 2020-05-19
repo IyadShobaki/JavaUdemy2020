@@ -72,11 +72,48 @@ public class DataSource {
             " ORDER BY " + TABLE_ARTISTS + "." + COLUMN_ARTIST_NAME + ", " +
                     TABLE_ALBUMS + "." + COLUMN_ALBUM_NAME + " COLLATE NOCASE ";
 
+    //create view if not EXISTS artist_list as
+    //select artists.name, albums.name as album, songs.track, songs.title from songs
+    //inner join albums on songs.album = albums._id
+    //inner join artists on albums.artist = artists._id
+    //order by artists.name, albums.name, songs.track;
+    public static final String TABLE_ARTIST_SONG_VIEW = "artist_list";
+    public static final String CREATE_ARTIST_FOR_SONG_VIEW = "CREATE VIEW IF NOT EXISTS " +
+            TABLE_ARTIST_SONG_VIEW + " AS SELECT " + TABLE_ARTISTS + "." + COLUMN_ARTIST_NAME + ", " +
+            TABLE_ALBUMS + "." + COLUMN_ALBUM_NAME + " AS " + COLUMN_SONG_ALBUM + ", " + TABLE_SONGS + "." +
+            COLUMN_SONG_TRACK + ", " + TABLE_SONGS + "." + COLUMN_SONG_TITLE + " FROM " + TABLE_SONGS + " INNER JOIN " +
+            TABLE_ALBUMS + " ON " + TABLE_SONGS + "." + COLUMN_SONG_ALBUM + " = " + TABLE_ALBUMS + "." + COLUMN_ALBUM_ID +
+            " INNER JOIN " + TABLE_ARTISTS + " ON " + TABLE_ALBUMS + "." + COLUMN_ALBUM_ARTIST + " = " +
+            TABLE_ARTISTS + "." + COLUMN_ARTIST_ID +
+            " ORDER BY " + TABLE_ARTISTS + "." + COLUMN_ARTIST_NAME + ", " +
+            TABLE_ALBUMS + "." + COLUMN_ALBUM_NAME + ", " +
+            TABLE_SONGS + "." + COLUMN_SONG_TRACK;
+
+    // SELECT name, album, track FROM artist_list WHERE title = "Go Your Own Way";
+    public static final String QUERY_VIEW_SONG_INFO = "SELECT " + COLUMN_ARTIST_NAME + ", " +
+            COLUMN_ALBUM_NAME + ", " + COLUMN_SONG_TRACK + " FROM " + TABLE_ARTIST_SONG_VIEW +
+            " WHERE " + COLUMN_SONG_TITLE + " = \"";
+
+    //create prepared statement
+    //SELECT name, album, track FROM artist_list WHERE title = ?
+    public static final String QUERY_VIEW_SONG_INFO_PREP = "SELECT " + COLUMN_ARTIST_NAME + ", " +
+            COLUMN_ALBUM_NAME + ", " + COLUMN_SONG_TRACK + " FROM " + TABLE_ARTIST_SONG_VIEW +
+            " WHERE " + COLUMN_SONG_TITLE + " = ?";  //? place holder character
+    // and ? this will be parameterIndex 1.
+    // If we have  SELECT name, album, track FROM artist_list WHERE title = ? ORDER BY ?, ?
+                                                                        //  1          2  3
+
+
+
+
     private Connection conn;
+    //we need to declare an instance variable for the prepared statement
+    private PreparedStatement querySongInfoView;
 
     public boolean open() {
         try {
             conn = DriverManager.getConnection(CONNECTION_STRING);
+            querySongInfoView = conn.prepareStatement(QUERY_VIEW_SONG_INFO_PREP);
             return true;
         } catch (SQLException e) {
             System.out.println("Couldn't connect to database " + e.getMessage());
@@ -86,6 +123,9 @@ public class DataSource {
 
     public void close() {
         try {
+            if(querySongInfoView != null){
+                querySongInfoView.close();
+            }
             if (conn != null) {
                 conn.close();
             }
@@ -196,21 +236,102 @@ public class DataSource {
         }
 
     }
-    public void querySongsMetadata(){
+
+    public void querySongsMetadata() {
         String sql = "SELECT * FROM " + TABLE_SONGS;
 
-        try(Statement statement = conn.createStatement();
-            ResultSet results = statement.executeQuery(sql)){
+        try (Statement statement = conn.createStatement();
+             ResultSet results = statement.executeQuery(sql)) {
             ResultSetMetaData meta = results.getMetaData();
             int numColumns = meta.getColumnCount();
-            for(int i=1; i <= numColumns; i++){
+            for (int i = 1; i <= numColumns; i++) {
                 System.out.format("Column %d in the songs table is names %s\n",
                         i, meta.getColumnName(i));
             }
-        }catch(SQLException e){
+        } catch (SQLException e) {
             System.out.println("Query failed: " + e.getMessage());
         }
     }
+
+    public int getCount(String table) {
+        String sql = "SELECT COUNT(*) AS count FROM " + table;
+//        String sql = "SELECT COUNT(*) AS count, MIN(_id) AS min_id FROM " + table;
+        try (Statement statement = conn.createStatement();
+             ResultSet results = statement.executeQuery(sql)) {
+
+//            int count = results.getInt(1);
+//            int min = results.getInt(2);
+            int count = results.getInt("count");
+//            int min = results.getInt("min_id");
+//            System.out.format("Count %d, Min = %d\n", count , min);
+            System.out.format("Count %d\n", count);
+            return count;
+        } catch (SQLException e) {
+            System.out.println("Query failed: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    public boolean createViewSongArtists() {
+        try (Statement statement = conn.createStatement()) {
+            statement.execute(CREATE_ARTIST_FOR_SONG_VIEW);
+            return true;
+        } catch (SQLException e) {
+            System.out.println("Create View Failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public List<SongArtist> querySongInfoView(String title) {
+
+
+        //we have to don't use try with resources because we need to use the prepared statement
+        //we need to close the statement in the close() method but we don't have to worry about closing ResultSet
+        //in prepared statements
+        try {
+            querySongInfoView.setString(1, title);
+            ResultSet results = querySongInfoView.executeQuery();
+            List<SongArtist> songArtists = new ArrayList<>();
+            while (results.next()) {
+                SongArtist songArtist = new SongArtist();
+                songArtist.setArtistName(results.getString(1));
+                songArtist.setAlbumName(results.getString(2));
+                songArtist.setTrack(results.getInt(3));
+                songArtists.add(songArtist);
+
+            }
+            return songArtists;
+        } catch (SQLException e) {
+            System.out.println("Query failed: " + e.getMessage());
+            return null;
+        }
+
+//        StringBuilder sb = new StringBuilder(QUERY_VIEW_SONG_INFO);
+//        sb.append(title);
+//        sb.append("\"");
+//
+//        System.out.println(sb.toString());
+//
+//        try (Statement statement = conn.createStatement();
+//             ResultSet results = statement.executeQuery(sb.toString())) {
+//            List<SongArtist> songArtists = new ArrayList<>();
+//            while (results.next()) {
+//                SongArtist songArtist = new SongArtist();
+//                songArtist.setArtistName(results.getString(1));
+//                songArtist.setAlbumName(results.getString(2));
+//                songArtist.setTrack(results.getInt(3));
+//                songArtists.add(songArtist);
+//
+//            }
+//
+//            return songArtists;
+//        } catch (SQLException e) {
+//            System.out.println("Query failed: " + e.getMessage());
+//            return null;
+//        }
+
+    }
+
 }
 
 

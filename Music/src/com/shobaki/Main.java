@@ -5,6 +5,7 @@ import model.DataSource;
 import model.SongArtist;
 
 import java.util.List;
+import java.util.Scanner;
 
 public class Main {
 
@@ -47,6 +48,28 @@ public class Main {
         }
 
         dataSource.querySongsMetadata();
+
+        int count = dataSource.getCount(DataSource.TABLE_SONGS);
+        System.out.println("Number of songs is " + count);
+
+        dataSource.createViewSongArtists();
+
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter a song title: ");
+        //Go Your Own Way" or 1=1 or "  SQL injection attack
+        //SELECT name, name, track FROM artist_list WHERE title = "Go Your Own Way" or 1=1 or ""
+        //We should use the prepared statements class to prevent this attack
+        String title = scanner.nextLine();
+        songArtists = dataSource.querySongInfoView(title);
+        if(songArtists.isEmpty()){  //using isEmpty is much better way for checking
+            System.out.println("Couldn't find the artist for the song");
+            return;
+        }
+        for(SongArtist artist : songArtists){
+            System.out.println("FROM VIEW - Artist name = " + artist.getArtistName() +
+                    " Album name = " + artist.getAlbumName() +
+                    " Track number = " + artist.getTrack());
+        }
 
         dataSource.close();
     }
